@@ -2,10 +2,20 @@
 # Competencia CAS y ACTEX 2025 - .gitignore
 # ==========================================
 
-# ===== CARPETAS SINCRONIZADAS CON RCLONE =====
-# Estas carpetas se sincronizan con Google Drive usando rclone
-/data/
-/images/
+# ===== CONFIGURACIÓN DE CARPETAS =====
+# data/ e images/: Excluir contenido pero mantener estructura con .gitkeep
+/data/*
+!/data/.gitkeep
+!/data/input/.gitkeep
+!/data/processed/.gitkeep
+!/data/output/.gitkeep
+
+/images/*
+!/images/.gitkeep
+
+# Configuraciones locales del IDE
+/.claude/
+/.vscode/
 
 # ===== ARCHIVOS Y CARPETAS TEMPORALES =====
 # Python
@@ -70,9 +80,8 @@ htmlcov/
 /report/content/*.log
 # Mantener solo .tex, .bib y carpeta images/ en report/
 
-# ===== OUTPUT - Solo PDFs se rastrean =====
+# ===== OUTPUT - Solo estructura, no contenido =====
 /output/*
-!/output/*.pdf
 !/output/.gitkeep
 
 # ===== MODELOS Y OUTPUTS =====
@@ -95,8 +104,7 @@ venv.bak/
 .conda/
 *.conda
 
-# IDE y editores
-.vscode/
+# IDE y editores (ya incluidos arriba)
 .idea/
 *.swp
 *.swo
