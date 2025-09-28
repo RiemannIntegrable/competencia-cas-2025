@@ -1,0 +1,164 @@
+# ==========================================
+# Competencia CAS y ACTEX 2025 - .gitignore
+# ==========================================
+
+# ===== CARPETAS SINCRONIZADAS CON RCLONE =====
+# Estas carpetas se sincronizan con Google Drive usando rclone
+/data/
+/images/
+
+# ===== ARCHIVOS Y CARPETAS TEMPORALES =====
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+*.nbconvert.ipynb
+
+# R
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+*.Rproj
+
+# LaTeX - archivos auxiliares en report/
+/report/*.aux
+/report/*.log
+/report/*.out
+/report/*.toc
+/report/*.synctex.gz
+/report/*.bbl
+/report/*.blg
+/report/*.fdb_latexmk
+/report/*.fls
+/report/*.nav
+/report/*.snm
+/report/*.vrb
+/report/*.bcf
+/report/*.run.xml
+/report/*.pdf
+/report/config/*.aux
+/report/config/*.log
+/report/content/*.aux
+/report/content/*.log
+# Mantener solo .tex, .bib y carpeta images/ en report/
+
+# ===== OUTPUT - Solo PDFs se rastrean =====
+/output/*
+!/output/*.pdf
+!/output/.gitkeep
+
+# ===== MODELOS Y OUTPUTS =====
+/models/*.pkl
+/models/*.joblib
+/models/*.h5
+/models/*.pt
+/models/*.pth
+/models/*.onnx
+/models/*.json
+/models/*.bin
+
+# ===== ENTORNOS Y CONFIGURACIONES =====
+# Entornos virtuales
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+*.conda
+
+# IDE y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ===== ARCHIVOS SENSIBLES =====
+# Credenciales y tokens
+*.key
+*.pem
+*.env
+.env.*
+secrets.yml
+credentials.json
+token.json
+config.ini
+
+# Logs
+*.log
+logs/
+*.err
+
+# ===== ARCHIVOS ESPEC�FICOS DEL PROYECTO =====
+# Archivos CSV grandes o temporales
+*.csv
+!data/input/*.csv  # Excepto los de input si est�n versionados inicialmente
+
+# Archivos Excel temporales
+~$*.xlsx
+~$*.xls
+
+# Cach�
+.cache/
+*.cache
+
+# ===== EXCEPCIONES EXPL�CITAS =====
+# Mantener estos archivos/carpetas
+!*.py              # Scripts Python
+!*.tex             # Archivos LaTeX
+!*.ipynb           # Notebooks
+!*.md              # Documentaci�n Markdown
+!*.yml             # Archivos YAML (environment.yml)
+!*.yaml            # Archivos YAML alternativos
+!LICENSE           # Licencia
+!.gitignore        # Este archivo
+!.gitkeep          # Marcadores de carpetas vac�as
+!/report/images/   # Im�genes del reporte LaTeX
+!/context/         # Carpeta de contexto
+!/src/             # C�digo fuente
+!/notebooks/       # Notebooks de an�lisis
+
+# ===== NOTAS =====
+# Estructura de sincronización:
+# - /data/ e /images/: Se sincronizan completas con rclone
+# - /output/: Solo se rastrean los PDFs en Git
+# - /report/: Solo se rastrean .tex, .bib e images/
+#
+# Para sincronizar con Google Drive:
+# Subir: rclone sync ./data gdriveekg:competencia_cas/data -v
+#        rclone sync ./images gdriveekg:competencia_cas/images -v
+# Bajar: rclone sync gdriveekg:competencia_cas/data ./data -v
+#        rclone sync gdriveekg:competencia_cas/images ./images -v

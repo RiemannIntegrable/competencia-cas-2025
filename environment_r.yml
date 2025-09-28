@@ -1,0 +1,77 @@
+name: competencia_cas_r
+channels:
+  - conda-forge
+  - r
+  - defaults
+dependencies:
+  # R base y Jupyter
+  - r-base=4.3
+  - r-irkernel
+  - jupyter
+  - jupyterlab
+
+  # Tidyverse y manipulación de datos
+  - r-tidyverse
+  - r-dplyr
+  - r-tidyr
+  - r-ggplot2
+  - r-readr
+  - r-tibble
+  - r-purrr
+  - r-stringr
+  - r-forcats
+
+  # GLMs y modelación estadística
+  - r-mass
+  - r-statmod
+  - r-tweedie
+  - r-car
+  - r-broom
+  - r-lme4
+  - r-glmnet
+
+  # Visualización y gráficos
+  - r-corrplot
+  - r-gridextra
+  - r-scales
+  - r-viridis
+  - r-plotly
+
+  # Análisis exploratorio
+  - r-dataexplorer
+  - r-vim
+  - r-naniar
+
+  # Diagnóstico de modelos
+  - r-hnp
+  - r-performance
+  - r-dharma
+
+  # Tablas y reportes
+  - r-knitr
+  - r-kableextra
+  - r-dt
+  - r-rmarkdown
+
+  # Utilidades
+  - r-lubridate
+  - r-janitor
+  - r-here
+
+  # Machine Learning adicional
+  - r-caret
+  - r-randomforest
+  - r-xgboost
+  - r-ranger
+
+  # Para la competencia
+  - r-insurancedata
+  - r-actuar
+
+  # Python para notebooks mixtos (opcional)
+  - python=3.11
+  - pandas
+  - numpy
+  - scikit-learn
+  - matplotlib
+  - seaborn
