@@ -20,11 +20,11 @@
 
 \section{Introducción}
 
-El presente documento describe la metodología propuesta para el desarrollo de un modelo predictivo de tarificación actuarial en el contexto de seguros para inquilinos residenciales, específicamente para el producto "Póliza para Dormitorios" dirigido a estudiantes universitarios. El objetivo principal es estimar la prima pura de riesgo individualizada por asegurado mediante el análisis de la siniestralidad histórica y variables demográficas disponibles.
+El presente documento se desarrolla en el marco de la Competencia de Casos CAS y ACTEX 2025, enfocándose en el diseño de un modelo predictivo de tarificación para Sigma Seguros, aseguradora que busca optimizar su producto "Póliza para Dormitorios" dirigido a estudiantes universitarios. El objetivo es desarrollar un modelo actuarialmente sólido que estime la prima pura de riesgo individualizada por asegurado, reemplazando el sistema actual de prima única mediante el análisis de la siniestralidad histórica y variables demográficas disponibles.
 
 \medskip
 
-El enfoque propuesto contempla el modelado independiente por cobertura, sustentado en la baja correlación observada preliminarmente entre las pérdidas de las cuatro coberturas disponibles. Esta estructura permitirá capturar las características específicas del riesgo de cada cobertura y generar primas técnicamente sólidas.
+El enfoque propuesto contempla el modelado independiente por cobertura, sustentado en la baja correlación observada preliminarmente entre las pérdidas de las cuatro coberturas disponibles. Esta estructura permitirá capturar las características específicas del riesgo de cada cobertura y generar primas técnicamente sólidas. La implementación requerirá completar el ajuste formal de los modelos, validación de supuestos estadísticos, y evaluación mediante las métricas Error Absoluto Medio (EAM) y Coeficiente de Gini establecidas en la competencia.
 
 \section{Estructura de Datos}
 
@@ -46,10 +46,6 @@ Las diferencias en las distribuciones de frecuencia y severidad entre coberturas
 
 La exploración preliminar identifica múltiples inquilinos como el factor de riesgo más significativo, con pérdida promedio de \$2,228 versus \$528 para viviendas de un solo inquilino. La ubicación fuera del campus presenta pérdida promedio de \$1,428 comparada con \$558 dentro del campus. La ausencia de extintor de incendios incrementa la pérdida promedio a \$1,213 frente a \$711 con extintor presente.
 
-\medskip
-
-La clase de suscripción muestra gradiente de riesgo ascendente (Clase1: \$758, Clase2: \$905, Clase3: \$966), aunque con frecuencias similares. Las variables categóricas adicionales (área de estudios, año cursado, género) presentan menor diferenciación, requiriendo análisis multivariado para determinar su contribución marginal al riesgo.
-
 \section{Metodología Propuesta}
 
 \subsection{Validación de Independencia}
@@ -58,30 +54,26 @@ Se aplicarán tests formales de independencia entre coberturas para sustentar el
 
 \subsection{Selección de Variables}
 
-La selección de variables significativas por cobertura se realizará mediante métodos estadísticos formales. Se considerarán algoritmos de selección stepwise (forward/backward) basados en criterios AIC/BIC, regularización LASSO para penalización de coeficientes no significativos, y métricas de importancia de variables derivadas de Random Forest. La selección final priorizará parsimonia y significancia estadística para evitar sobreajuste.
+La selección de variables significativas por cobertura se realizará mediante métodos estadísticos formales. Se considerarán algoritmos de selección stepwise (forward/backward) basados en criterios AIC/BIC, regularización LASSO para penalización de coeficientes no significativos, y métricas de importancia de variables derivadas de Random Forest.
 
 \subsection{Segmentación de Riesgo}
 
-Dado el número elevado de variables explicativas y su naturaleza mixta (categóricas y numéricas), se propone aplicar técnicas de segmentación para clasificar asegurados en dos categorías de riesgo: Alto y Bajo. Esta categorización se implementará mediante clustering (K-means o jerárquico) sobre variables normalizadas, o alternativamente mediante regresión logística utilizando la ocurrencia de siniestro como variable binaria de respuesta. La segmentación simplificará la estructura tarifaria manteniendo capacidad de diferenciación.
+Dado el número elevado de variables explicativas y su naturaleza mixta (categóricas y numéricas), se propone aplicar técnicas de segmentación supervisada para clasificar asegurados en dos categorías de riesgo: Alto y Bajo. Esta categorización se implementará mediante regresión logística utilizando la ocurrencia de siniestro como variable binaria de respuesta, generando probabilidades de siniestralidad que permitan establecer un umbral natural de clasificación. Alternativamente, se considerará un árbol de decisión simple que genere reglas interpretables de segmentación basadas en las variables de mayor capacidad discriminante. La segmentación simplificará la estructura tarifaria manteniendo capacidad de diferenciación.
 
 \subsection{Modelado de Frecuencia}
 
-Para cada cobertura se modelará la frecuencia de siniestros considerando la heterogeneidad observada en las variables explicativas. Se evaluarán distribuciones discretas (Poisson, Binomial Negativa, Zero-Inflated Poisson) junto con métodos de machine learning como Random Forest y Gradient Boosting, que capturan efectivamente interacciones no lineales y heterogeneidad en datos de frecuencia. La selección final se basará en validación cruzada y criterios de desempeño predictivo sobre datos de prueba.
+Para cada cobertura se intentará modelar o ajustar distribuciones apropiadas para datos de conteo de siniestros. Dada la limitación de contar con información de un solo año de siniestralidad, se evaluarán distribuciones discretas (Poisson, Binomial Negativa, Zero-Inflated Poisson) mediante tests de bondad de ajuste y criterios de información. En caso de que la información histórica resulte insuficiente para un modelado robusto con variables explicativas, se trabajará directamente con el parámetro de la distribución que mejor se ajuste a los datos observados de frecuencia para cada segmento de riesgo identificado.
 
 \subsection{Modelado de Severidad}
 
-Condicionado a la ocurrencia de siniestro, se modelará la severidad mediante distribuciones continuas sobre el dominio positivo. Las distribuciones candidatas son Gamma y Lognormal, seleccionadas por su flexibilidad para capturar asimetría y colas pesadas típicas de datos de severidad. La estimación se realizará por máxima verosimilitud, y la selección entre distribuciones se basará en tests de razón de verosimilitud y análisis de residuos.
+Condicionado a la ocurrencia de siniestro, se modelará la severidad mediante distribuciones continuas sobre el dominio positivo. Las distribuciones candidatas son Gamma y Lognormal. La estimación se realizará por máxima verosimilitud.
 
 \subsection{Prima Pura por Cobertura}
 
-La prima pura de cada cobertura se calculará como el producto de la frecuencia esperada y la severidad esperada, incorporando los efectos de las variables explicativas a través de los modelos ajustados. La prima total del asegurado resultará de la suma de las primas puras de las cuatro coberturas, bajo el supuesto validado de independencia. Este enfoque preserva la interpretabilidad actuarial y facilita la implementación operativa de la tarifa.
+La prima pura de cada cobertura se calculará como el producto de la frecuencia esperada y la severidad esperada, incorporando los efectos de las variables explicativas a través de los modelos ajustados. La prima total del asegurado resultará de la suma de las primas puras de las cuatro coberturas, bajo el supuesto validado de independencia.
 
 \medskip
 
 Dependiendo de los resultados del modelado y el nivel de riesgo observado, se evaluará la necesidad de incorporar ajustes adicionales mediante factores de seguridad derivados de los intervalos de confianza de las severidades estimadas. En escenarios de bajo riesgo, la prima pura obtenida directamente del modelo puede resultar suficiente, mientras que situaciones de mayor incertidumbre justificarían ajustes basados en percentiles superiores de las distribuciones de severidad.
-
-\section{Siguientes Pasos}
-
-La implementación de la metodología propuesta requiere completar el ajuste formal de los modelos, validación de supuestos estadísticos, y evaluación de capacidad predictiva sobre el conjunto de validación. Los resultados serán evaluados mediante las métricas Error Absoluto Medio (EAM) y Coeficiente de Gini establecidas en la competencia, priorizando tanto exactitud como capacidad de ordenamiento de riesgo.
 
 \end{document}
