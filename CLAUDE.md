@@ -1,4 +1,8 @@
-# CLAUDE.md - Competencia de Casos CAS y ACTEX 2025
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# Competencia de Casos CAS y ACTEX 2025
 ## Modelo Predictivo para Tarificación de Seguros de Inquilinos
 
 ## 🎯 Contexto del Proyecto
@@ -207,6 +211,195 @@ Para información más específica, consultar:
 
 ---
 
-*Última actualización: 2025-09-28*
-- En los notebooks ya definidos en @notebooks vamos a desarrollar un modelo de frecuencia, uno de severidad y uno de clasificacion por cada una de las 4 coberturas de la poliza. El objetivo es predecir el monto del siniestro de los estudiantes en el dataframe @data/input/test.csv . Para eso primero clasificamos entre siniestrados y no siniestrados, a los siniestrados les modelamos la frecuencia de los siniestros y tambien su severidad.
-- Para cada modelo vamos a seguir siempre el mismo orden logico: 1) Estandarizar las variables numericas y pasar por one hot encoding las categoricas, partimos el dataset de entrada en train y test 80 20 y corremos un glm (el apropiado dependiendo si es clasificacion o regresion) con una seleccion de variables backward y en base a esas variables seleccionadas (si se selecciono uno de los niveles de una variable categorica, todos los niveles de esa variable categorica deben estar en el modelo) corremos lazypredict para encontrar los mejores algoritmos que aplicarle a train y luego de ejecutar esta primera parte 2) para los 5 mejores modelos que arroje lazy predict vamos a correr un cross validation con grid search al dataset train (siempre con parametros de suavisado para evitar el overfitting, optimizando sobre MAE para las regresiones y sobre el F1-score para las clasificaciones ya que son datasets muy desvalanceados, tambien para los modelos de clasificacion hay que optimizar el treshold para la variable objetivo = 1) y a los modelos resultantes los pasamos por el dataset test e imprime las metricas MAE, GINI, R^2, (accuracy si es clasificacion) que resultan de cada modelo en el dataset test, finalmente 3) te diremos que modelo exportar a @models/
+## 🛠️ Configuración del Entorno
+
+### Entornos Conda
+
+El proyecto usa dos entornos conda separados:
+
+**Python (Principal)**:
+```bash
+conda env create -f environmet_python.yml
+conda activate competencia_cas_python
+```
+
+**R (Análisis complementario)**:
+```bash
+conda env create -f environment_r.yml
+conda activate competencia_cas_r
+```
+
+### Jupyter Notebooks
+
+Todos los notebooks están en `notebooks/`. Para iniciar Jupyter:
+```bash
+jupyter notebook notebooks/
+# o
+jupyter lab
+```
+
+## 📂 Arquitectura de Datos
+
+### Pipeline de Procesamiento
+
+1. **Datos crudos**: `data/input/input.csv` (10,000 registros totales)
+   - 7,999 registros de entrenamiento (`retencion == "entrenamiento"`)
+   - 2,001 registros de validación (`retencion == "validacion"`)
+
+2. **Notebook de preprocesamiento**: `notebooks/tratamiento_data.ipynb`
+   - Elimina columnas: `nombre`, `estudiante_id`, `clase_suscripcion`, `en_campus`, `retencion`
+   - Genera 8 datasets procesados en `data/processed/`:
+
+**Por cada cobertura se generan 2 datasets**:
+- `{cobertura}_full.csv`: Todos los registros (para modelos de clasificación)
+- `{cobertura}_siniestrados.csv`: Solo registros con siniestros (para frecuencia/severidad)
+
+**Coberturas**:
+- `contenidos_*` (743 siniestrados de 7,999)
+- `adicionales_*` (416 siniestrados de 7,999)
+- `medicos_*` (183 siniestrados de 7,999)
+- `rc_*` (67 siniestrados de 7,999)
+
+3. **Datos de validación final**: `data/input/test.csv`
+   - 2,001 IDs de estudiantes para predicción final
+
+## 🔬 Metodología de Modelación
+
+### Estrategia de Modelación por Cobertura
+
+Para cada una de las 4 coberturas desarrollamos **3 modelos**:
+
+1. **Clasificación** (`clasificacion_{cobertura}.ipynb`):
+   - Input: `{cobertura}_full.csv`
+   - Target: Binario (siniestrado vs no siniestrado)
+   - Optimización: F1-score (dataset muy desbalanceado)
+
+2. **Frecuencia** (`frecuencia_{cobertura}.ipynb`):
+   - Input: `{cobertura}_siniestrados.csv`
+   - Target: `{Cobertura}_siniestros_num` (conteo)
+   - Optimización: MAE
+
+3. **Severidad** (`severidad_{cobertura}.ipynb`):
+   - Input: `{cobertura}_siniestrados.csv`
+   - Target: `{Cobertura}_siniestros_monto` (monto)
+   - Optimización: MAE
+
+### Pipeline Estándar de Cada Notebook
+
+**Fase 1: Preparación y GLM Baseline**
+1. Estandarizar variables numéricas (StandardScaler)
+2. One-hot encoding de variables categóricas
+3. Split train/test 80/20
+4. GLM con selección backward de variables
+   - Clasificación: Logistic Regression
+   - Frecuencia: Poisson/Negative Binomial GLM
+   - Severidad: Gamma/Inverse Gaussian GLM
+5. Si un nivel de variable categórica es seleccionado, incluir **todos** los niveles
+6. Con variables seleccionadas, correr LazyPredict para identificar top algoritmos
+
+**Fase 2: Optimización de Top 5 Modelos**
+1. Tomar los 5 mejores modelos de LazyPredict
+2. GridSearchCV con validación cruzada sobre train set
+   - Parámetros de regularización para evitar overfitting
+   - Métrica de optimización:
+     - Regresión (frecuencia/severidad): `scoring='neg_mean_absolute_error'`
+     - Clasificación: `scoring='f1'`
+3. Para clasificación: optimizar threshold de probabilidad (no usar default 0.5)
+4. Evaluar modelos optimizados en test set
+5. Imprimir métricas:
+   - **Regresión**: MAE, GINI, R²
+   - **Clasificación**: MAE, GINI, R², Accuracy
+
+**Fase 3: Exportación**
+1. El modelo seleccionado se exporta a `models/` (se indicará cuál exportar)
+2. Usar joblib o pickle para serialización
+
+### Notebooks Existentes
+
+```
+notebooks/
+├── tratamiento_data.ipynb          # Preprocesamiento inicial
+├── clasificacion_contenidos.ipynb  # Clasificación Contenidos
+├── frecuencia_contenidos.ipynb     # Frecuencia Contenidos
+├── severidad_contenidos.ipynb      # Severidad Contenidos (modificado)
+├── clasificacion_adicionales.ipynb # Clasificación Gastos Adicionales
+├── frecuencia_adicionales.ipynb    # Frecuencia Gastos Adicionales
+├── severidad_adicionales.ipynb     # Severidad Gastos Adicionales
+├── clasificacion_medicos.ipynb     # Clasificación Gastos Médicos RC
+├── frecuencia_medicos.ipynb        # Frecuencia Gastos Médicos RC
+├── severidad_medicos.ipynb         # Severidad Gastos Médicos RC
+├── clasificacion_rc.ipynb          # Clasificación Resp. Civil
+├── frecuencia_rc.ipynb             # Frecuencia Resp. Civil
+└── severidad_rc.ipynb              # Severidad Resp. Civil
+```
+
+## 📊 Variables del Dataset
+
+### Variables Predictoras Disponibles
+
+Después de eliminar ID y columnas redundantes, quedan:
+
+- `año_cursado`: 1er año, 2do año, 3er año, 4to año, posgrado (categórica)
+- `estudios_area`: Administración, Ciencias, Humanidades, Otro (categórica)
+- `calif_promedio`: Promedio académico 0-10 (numérica)
+- `genero`: Masculino, Femenino, Otro, No respuesta (categórica)
+- `2_o_mas_inquilinos`: Si/No (categórica)
+- `distancia_al_campus`: Distancia en unidades (numérica, 0 si dentro campus)
+- `extintor_incendios`: Si/No (categórica)
+
+### Variables Target por Tipo de Modelo
+
+| Cobertura | Clasificación | Frecuencia | Severidad |
+|-----------|--------------|------------|-----------|
+| Contenidos | `Contenidos_siniestros_num > 0` | `Contenidos_siniestros_num` | `Contenidos_siniestros_monto` |
+| Gastos Adicionales | `Gastos_Adicionales_siniestros_num > 0` | `Gastos_Adicionales_siniestros_num` | `Gastos_Adicionales_siniestros_monto` |
+| Resp. Civil | `Resp_Civil_siniestros_num > 0` | `Resp_Civil_siniestros_num` | `Resp_Civil_siniestros_monto` |
+| Gastos Médicos RC | `Gastos_Medicos_RC_siniestros_num > 0` | `Gastos_Medicos_RC_siniestros_num` | `Gastos_Medicos_RC_siniestros_monto` |
+
+## 🎯 Consideraciones Actuariales Clave
+
+### Desbalance de Clases
+
+Los datasets están **muy desbalanceados**:
+- Contenidos: 9.3% siniestros (743/7999)
+- Gastos Adicionales: 5.2% siniestros (416/7999)
+- Gastos Médicos: 2.3% siniestros (183/7999)
+- Resp. Civil: 0.8% siniestros (67/7999)
+
+**Implicaciones**:
+- Usar F1-score (no accuracy) para clasificación
+- Considerar técnicas de balanceo si es necesario (SMOTE, class_weight)
+- Optimizar threshold de clasificación para balance precision/recall
+
+### Familias de Distribución para GLMs
+
+**Clasificación**: Binomial (link=logit)
+**Frecuencia**: Poisson o Negative Binomial (sobredispersión)
+**Severidad**: Gamma (montos positivos, asimétricos) o Inverse Gaussian
+
+## 🚀 Comandos Comunes
+
+### Git
+```bash
+# Ver estado
+git status
+
+# Commit de cambios
+git add .
+git commit -m "Descripción del cambio"
+git push
+```
+
+### Gestión de Modelos
+```bash
+# Los modelos se guardan en models/
+ls -lh models/
+
+# Exportar modelo desde notebook:
+# import joblib
+# joblib.dump(modelo, '../models/nombre_modelo.pkl')
+```
+
+---
+
+*Última actualización: 2025-10-10*
